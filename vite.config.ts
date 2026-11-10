@@ -5,6 +5,9 @@ import path from "node:path";
 
 // Vite config — https://vite.dev/config/
 export default defineConfig({
+  // Относительные пути к ассетам позволяют размещать сборку
+  // и в корне домена, и в подкаталоге (GitHub Pages).
+  base: "./",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

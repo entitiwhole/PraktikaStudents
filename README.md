@@ -36,23 +36,23 @@
 
 ## Быстрый старт
 
-Требуется Node.js 20+ (рекомендуется 22) и npm.
+Требуется Node.js 20+ (рекомендуется 22) и pnpm или npm.
 
 ```bash
 # Установка зависимостей
-npm install
+pnpm install   # или: npm install
 
 # Запуск dev-сервера на http://localhost:5173
-npm run dev
+pnpm dev       # или: npm run dev
 
 # Проверка типов
-npm run typecheck
+pnpm typecheck
 
 # Production-сборка в папку dist/
-npm run build
+pnpm build
 
 # Локальный предпросмотр собранного приложения
-npm run preview
+pnpm preview
 ```
 
 ## Структура проекта
@@ -76,19 +76,24 @@ npm run preview
 статического хостинга (GitHub Pages, Netlify, Vercel, nginx).
 
 ```bash
-npm run build
+pnpm build
 # содержимое dist/ можно выкладывать на хостинг
 ```
 
-При размещении в подкаталоге (например, `https://user.github.io/PraktikaStudents/`)
-задайте `base` в `vite.config.ts`:
+В `vite.config.ts` задан `base: "./"`, поэтому сборка работает и в корне
+домена, и в подкаталоге без дополнительной настройки.
 
-```ts
-export default defineConfig({
-  base: "/PraktikaStudents/",
-  // ...
-});
-```
+### GitHub Pages
+
+В репозитории уже есть workflow `.github/workflows/deploy.yml`, который
+собирает сайт и публикует его на GitHub Pages при каждом push в `main`.
+
+1. Откройте **Settings → Pages** репозитория.
+2. В разделе **Build and deployment → Source** выберите **GitHub Actions**.
+3. Сделайте push в `main` (или запустите workflow вручную во вкладке **Actions**).
+
+После выполнения workflow сайт будет доступен по адресу
+`https://<username>.github.io/PraktikaStudents/`.
 
 ## Лицензия
 
