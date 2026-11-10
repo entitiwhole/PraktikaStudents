@@ -83,18 +83,6 @@ pnpm build
 В `vite.config.ts` задан `base: "./"`, поэтому сборка работает и в корне
 домена, и в подкаталоге без дополнительной настройки.
 
-### GitHub Pages
-
-В репозитории уже есть workflow `.github/workflows/deploy.yml`, который
-собирает сайт и публикует его на GitHub Pages при каждом push в `main`.
-
-1. Откройте **Settings → Pages** репозитория.
-2. В разделе **Build and deployment → Source** выберите **GitHub Actions**.
-3. Сделайте push в `main` (или запустите workflow вручную во вкладке **Actions**).
-
-После выполнения workflow сайт будет доступен по адресу
-`https://<username>.github.io/PraktikaStudents/`.
-
 ## Лицензия
 
 Проект распространяется по лицензии [MIT](LICENSE).
