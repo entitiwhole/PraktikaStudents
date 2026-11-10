@@ -1,5 +1,9 @@
 # Практика.ПРО
 
+[![Открыть сайт](https://img.shields.io/badge/🌐_Открыть_сайт-Praktika.PRO-2563EB?style=for-the-badge)](https://entitiwhole.github.io/PraktikaStudents/)
+
+**Демо:** https://entitiwhole.github.io/PraktikaStudents/
+
 Веб-сервис для поиска производственной практики студентами СПО и подбора
 кандидатов учебными заведениями и предприятиями.
 
