@@ -2809,3 +2809,207 @@ img.avatar {
 }
 
 .directory { scroll-margin-top: 90px; }
+
+/* ---------- Авторизация, аккаунты и команда ---------- */
+.role-chip {
+  padding: 7px 12px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--blue) 9%, var(--surface));
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.auth-grid {
+  margin-bottom: 0;
+  gap: 12px;
+}
+.login-form .auth-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 15px;
+}
+.auth-error {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  background: #fef2f2;
+  color: var(--red);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.auth-switch {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+}
+.auth-switch button {
+  color: var(--blue);
+  font-weight: 700;
+  transition: color 0.18s ease;
+}
+.auth-switch button:hover {
+  color: var(--blue-dark);
+  text-decoration: underline;
+}
+.demo-login {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.demo-login > span {
+  text-align: center;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.demo-login > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.demo-login button {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.14s ease;
+}
+.demo-login button:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  transform: translateY(-1px);
+}
+.field-hint {
+  margin: -10px 0 16px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.field-hint b {
+  color: var(--text);
+}
+.role-pill {
+  margin-left: auto;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--blue) 9%, var(--surface));
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.team-panel {
+  margin-top: 20px;
+  padding: 24px;
+}
+.team-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.team-head h2 {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+.team-head p {
+  color: var(--muted);
+  font-size: 11px;
+}
+.team-count {
+  min-width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 800;
+}
+.team-list {
+  display: flex;
+  flex-direction: column;
+}
+.team-member {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.team-member:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.team-member .mini-avatar {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  font-size: 11px;
+}
+.team-member > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.team-member b {
+  font-size: 12px;
+}
+.team-member small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.team-member.me {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--blue) 6%, transparent), transparent);
+  border-radius: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin: 0 -10px;
+}
+.team-you {
+  color: var(--blue);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 950px) {
+  .role-chip {
+    display: none;
+  }
+}
+@media (max-width: 650px) {
+  .profile-head {
+    flex-wrap: wrap;
+  }
+  .role-pill {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    text-align: center;
+  }
+  .auth-grid {
+    grid-template-columns: 1fr;
+  }
+}

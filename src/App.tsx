@@ -8,8 +8,19 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  clearSession,
+  loadSession,
+  loadUsers,
+  ORGANIZATION_CODES,
+  roleLabel,
+  saveSession,
+  saveUsers,
+  userInitials,
+  type Role,
+  type User,
+} from "./auth";
 
-type Role = "student" | "college" | "company";
 type Page =
   | "home"
   | "company"
@@ -18,7 +29,6 @@ type Page =
   | "documents"
   | "profile"
   | "faq"
-  | "login"
   | "sitemap"
   | "404";
 type Toast = { id: number; kind: "success" | "error"; text: string };
@@ -367,28 +377,30 @@ function EmptyState({ onReset }: { onReset: () => void }) {
 }
 
 function Header({
-  role,
+  user,
   page,
   dark,
   menu,
   setDark,
   setMenu,
   navigate,
-  setRole,
   logout,
 }: {
-  role: Role;
+  user: User;
   page: Page;
   dark: boolean;
   menu: boolean;
   setDark: (v: boolean) => void;
   setMenu: (v: boolean) => void;
   navigate: (p: Page) => void;
-  setRole: (r: Role) => void;
   logout: () => void;
 }) {
-  const roleLabel =
-    role === "student" ? "Студент" : role === "college" ? "Техникум" : "Предприятие";
+  const role = user.role;
+  const roleText = roleLabel(role);
+  const subtitle =
+    role === "student"
+      ? `Студент${user.group ? ` · ${user.group}` : ""}`
+      : `${user.organizationShort ?? ""} · ${user.position ?? roleText}`;
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([
     {
@@ -469,28 +481,19 @@ function Header({
           )}
           {role !== "student" && (
             <>
-              <button className="active" onClick={() => navigate("home")}>
+              <button className={page === "home" ? "active" : ""} onClick={() => navigate("home")}>
                 Обзор
               </button>
-              <button onClick={() => navigate("faq")}>Помощь</button>
+              <button className={page === "faq" ? "active" : ""} onClick={() => navigate("faq")}>
+                Помощь
+              </button>
             </>
           )}
         </nav>
         <div className="header-actions">
-          <div className="role-switch">
-            <select
-              value={role}
-              onChange={(e) => {
-                setRole(e.target.value as Role);
-                navigate("home");
-              }}
-              aria-label="Переключить роль"
-            >
-              <option value="student">Студент</option>
-              <option value="college">Техникум</option>
-              <option value="company">Предприятие</option>
-            </select>
-          </div>
+          <span className="role-chip" title="Роль аккаунта">
+            {roleText}
+          </span>
           <button
             className="icon-btn"
             onClick={() => setDark(!dark)}
@@ -552,10 +555,10 @@ function Header({
               onClick={() => navigate("profile")}
               aria-label="Открыть профиль"
             >
-              <span className="avatar">АМ</span>
+              <span className="avatar">{userInitials(user.name)}</span>
               <span className="user-copy">
-                <b>Алексей Морозов</b>
-                <small>{roleLabel}</small>
+                <b>{user.name}</b>
+                <small>{subtitle}</small>
               </span>
               <Icon name="down" size={14} />
             </button>
@@ -581,7 +584,9 @@ function Header({
       </div>
       {menu && (
         <div className="mobile-drawer fade">
-          <button onClick={() => navigate("home")}>Обзор</button>
+          <button onClick={() => navigate("home")}>
+            {role === "student" ? "Предприятия" : "Обзор"}
+          </button>
           {role === "student" && (
             <>
               <button onClick={() => navigate("status")}>Мои заявки</button>
@@ -589,6 +594,7 @@ function Header({
             </>
           )}
           <button onClick={() => navigate("faq")}>Помощь и FAQ</button>
+          <button onClick={() => navigate("profile")}>Профиль</button>
           <button onClick={logout}>Выйти</button>
         </div>
       )}
@@ -1386,7 +1392,7 @@ function StatsCard({
 }
 
 function AdminDashboard({
-  role,
+  user,
   toast,
   verify,
   confirm,
@@ -1394,7 +1400,7 @@ function AdminDashboard({
   apps,
   onStatusChange,
 }: {
-  role: "college" | "company";
+  user: User;
   toast: (k: "success" | "error", t: string) => void;
   verify: () => void;
   confirm: (text: string, action: () => void) => void;
@@ -1402,6 +1408,7 @@ function AdminDashboard({
   apps: typeof initialApplications;
   onStatusChange: (id: number, status: string) => void;
 }) {
+  const role = user.role as "college" | "company";
   const [status, setStatus] = useState("Все статусы"),
     [query, setQuery] = useState("");
   const rows = apps.filter(
@@ -1430,11 +1437,15 @@ function AdminDashboard({
           <span className="eyebrow">
             {role === "college" ? "ПАНЕЛЬ ТЕХНИКУМА" : "КАБИНЕТ ПРЕДПРИЯТИЯ"}
           </span>
-          <h1>{role === "college" ? "Добрый день, МТК" : "Входящие заявки"}</h1>
+          <h1>
+            {role === "college"
+              ? `Добрый день, ${user.organizationShort ?? "техникум"}`
+              : "Входящие заявки"}
+          </h1>
           <p>
             {role === "college"
-              ? "Сводка по практике студентов на сегодня"
-              : "Кандидаты на производственную практику"}
+              ? `${user.organization ?? ""} · ${user.name}`
+              : `${user.organization ?? ""} · ${user.name}, ${user.position ?? ""}`}
           </p>
         </div>
         <Button variant="export" icon="download" onClick={exportCsv}>
@@ -1590,16 +1601,36 @@ function AdminDashboard({
 }
 
 function Profile({
+  user,
+  team,
   navigate,
   toast,
   logout,
+  onSave,
 }: {
+  user: User;
+  team: User[];
   navigate: (p: Page) => void;
   toast: (k: "success" | "error", t: string) => void;
   logout: () => void;
+  onSave: (patch: Partial<User>) => void;
 }) {
   const avatarInput = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
+  const parts = user.name.split(/\s+/);
+  const [first, setFirst] = useState(parts[0] ?? "");
+  const [last, setLast] = useState(parts.slice(1).join(" "));
+  const [email, setEmail] = useState(user.email);
+  const [position, setPosition] = useState(user.position ?? "");
+  const [notify, setNotify] = useState(true);
+  const save = (event: FormEvent) => {
+    event.preventDefault();
+    onSave({
+      name: `${first.trim()} ${last.trim()}`.trim(),
+      email: email.trim(),
+      ...(user.role === "student" ? {} : { position: position.trim() }),
+    });
+  };
   return (
     <main className="container page narrow fade">
       <Breadcrumbs items={["Настройки профиля"]} navigate={navigate} />
@@ -1607,13 +1638,7 @@ function Profile({
         <h1>Настройки профиля</h1>
         <p>Управляйте личными данными и уведомлениями.</p>
       </div>
-      <form
-        className="panel form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast("success", "Настройки сохранены");
-        }}
-      >
+      <form className="panel form" onSubmit={save}>
         <div className="profile-head">
           <button
             className="profile-avatar"
@@ -1624,7 +1649,7 @@ function Profile({
             {avatar ? (
               <img className="avatar big" src={avatar} alt="Фото профиля" />
             ) : (
-              <span className="avatar big">АМ</span>
+              <span className="avatar big">{userInitials(`${first} ${last}`)}</span>
             )}
             <span className="avatar-edit">
               <Icon name="pencil" size={18} />
@@ -1644,31 +1669,80 @@ function Profile({
             }}
           />
           <div>
-            <h3>Алексей Морозов</h3>
-            <p>Студент · ИС-21</p>
+            <h3>
+              {first} {last}
+            </h3>
+            <p>
+              {user.role === "student"
+                ? `Студент · ${user.group ?? ""}`
+                : `${user.organization ?? ""} · ${position || user.position}`}
+            </p>
           </div>
+          <span className="role-pill">{roleLabel(user.role)}</span>
         </div>
         <hr />
         <div className="form-grid">
           <label>
             <span>Имя</span>
-            <input defaultValue="Алексей" />
+            <input value={first} onChange={(event) => setFirst(event.target.value)} required />
           </label>
           <label>
             <span>Фамилия</span>
-            <input defaultValue="Морозов" />
+            <input value={last} onChange={(event) => setLast(event.target.value)} required />
           </label>
         </div>
         <label>
           <span>Электронная почта</span>
-          <input type="email" defaultValue="a.morozov@example.ru" />
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
         </label>
+        {user.role === "student" ? (
+          <div className="form-grid">
+            <label>
+              <span>Группа</span>
+              <div className="readonly-field">
+                <input value={user.group ?? ""} readOnly aria-readonly="true" />
+                <Icon name="lock" size={16} />
+              </div>
+            </label>
+            <label>
+              <span>Специальность</span>
+              <div className="readonly-field">
+                <input value={user.specialty ?? ""} readOnly aria-readonly="true" />
+                <Icon name="lock" size={16} />
+              </div>
+            </label>
+          </div>
+        ) : (
+          <div className="form-grid">
+            <label>
+              <span>Организация</span>
+              <div className="readonly-field">
+                <input value={user.organization ?? ""} readOnly aria-readonly="true" />
+                <Icon name="lock" size={16} />
+              </div>
+            </label>
+            <label>
+              <span>Должность</span>
+              <input value={position} onChange={(event) => setPosition(event.target.value)} />
+            </label>
+          </div>
+        )}
         <div className="toggle-row">
           <div>
             <b>Уведомления по почте</b>
             <p>Получать информацию об изменении статуса</p>
           </div>
-          <input type="checkbox" defaultChecked aria-label="Уведомления по почте" />
+          <input
+            type="checkbox"
+            checked={notify}
+            onChange={(event) => setNotify(event.target.checked)}
+            aria-label="Уведомления по почте"
+          />
         </div>
         <div className="form-footer">
           <Button type="submit">Сохранить изменения</Button>
@@ -1679,6 +1753,39 @@ function Profile({
           </Button>
         </div>
       </form>
+      {user.role !== "student" && (
+        <section className="panel team-panel">
+          <div className="team-head">
+            <div>
+              <h2>Команда</h2>
+              <p>Сотрудники, которые занимаются практикой студентов</p>
+            </div>
+            <span className="team-count">{team.length + 1}</span>
+          </div>
+          <div className="team-list">
+            <div className="team-member me">
+              <span className="mini-avatar">{userInitials(user.name)}</span>
+              <div>
+                <b>
+                  {user.name} <span className="team-you">вы</span>
+                </b>
+                <small>{user.position}</small>
+                <small>{user.email}</small>
+              </div>
+            </div>
+            {team.map((member) => (
+              <div className="team-member" key={member.id}>
+                <span className="mini-avatar">{userInitials(member.name)}</span>
+                <div>
+                  <b>{member.name}</b>
+                  <small>{member.position}</small>
+                  <small>{member.email}</small>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
@@ -1729,10 +1836,126 @@ function FAQ({ navigate }: { navigate: (p: Page) => void }) {
   );
 }
 
-function Login({ onLogin }: { onLogin: (r: Role) => void }) {
+function AuthPage({
+  accounts,
+  onLogin,
+  onRegister,
+}: {
+  accounts: User[];
+  onLogin: (user: User, remember: boolean) => void;
+  onRegister: (user: User, remember: boolean) => void;
+}) {
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [role, setRole] = useState<Role>("student");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [error, setError] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [name, setName] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [group, setGroup] = useState("ИС-21");
+  const [specialty, setSpecialty] = useState("Информационные системы");
+  const [orgCode, setOrgCode] = useState("");
+  const [position, setPosition] = useState("");
+
+  const switchMode = (next: "login" | "register") => {
+    setMode(next);
+    setError("");
+    setPassword("");
+    setConfirm("");
+  };
+  const switchRole = (next: Role) => {
+    setRole(next);
+    setError("");
+  };
+  const submitLogin = (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+    const account = accounts.find(
+      (item) => item.email.toLowerCase() === email.trim().toLowerCase(),
+    );
+    if (!account) {
+      setError("Аккаунт с такой почтой не найден. Проверьте адрес или зарегистрируйтесь.");
+      return;
+    }
+    if (account.password !== password) {
+      setError("Неверный пароль. Попробуйте ещё раз.");
+      return;
+    }
+    if (account.role !== role) {
+      setError(
+        `Этот аккаунт относится к роли «${roleLabel(account.role)}». Выберите её на вкладке выше.`,
+      );
+      return;
+    }
+    onLogin(account, remember);
+  };
+  const submitRegister = (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanName) {
+      setError("Укажите имя и фамилию.");
+      return;
+    }
+    if (accounts.some((item) => item.email.toLowerCase() === cleanEmail)) {
+      setError("Аккаунт с такой почтой уже существует. Войдите в него.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Пароль должен содержать не менее 6 символов.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Пароли не совпадают.");
+      return;
+    }
+    let organization: string | undefined;
+    let organizationShort: string | undefined;
+    if (role === "student") {
+      if (!group.trim()) {
+        setError("Укажите группу.");
+        return;
+      }
+    } else {
+      const org = ORGANIZATION_CODES.find(
+        (item) =>
+          item.role === role && item.code.toLowerCase() === orgCode.trim().toLowerCase(),
+      );
+      if (!org) {
+        setError("Неверный код организации для выбранной роли. Проверьте код, выданный организацией.");
+        return;
+      }
+      if (!position.trim()) {
+        setError("Укажите должность.");
+        return;
+      }
+      organization = org.organization;
+      organizationShort = org.organizationShort;
+    }
+    const newUser: User = {
+      id: crypto.randomUUID ? crypto.randomUUID() : `u-${Date.now()}`,
+      role,
+      name: cleanName,
+      email: cleanEmail,
+      password,
+      ...(role === "student"
+        ? { group: group.trim(), specialty }
+        : { organization, organizationShort, position: position.trim() }),
+    };
+    onRegister(newUser, remember);
+  };
+  const quickLogin = (nextRole: Role) => {
+    const account = accounts.find((item) => item.role === nextRole);
+    if (!account) {
+      setError("Демо-аккаунт не найден.");
+      return;
+    }
+    onLogin(account, true);
+  };
   return (
     <main className="login-page">
       <div className="login-side">
@@ -1758,43 +1981,209 @@ function Login({ onLogin }: { onLogin: (r: Role) => void }) {
       <div className="login-form-wrap">
         <form
           className="login-form panel"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onLogin(role);
-          }}
+          onSubmit={mode === "login" ? submitLogin : submitRegister}
         >
-          <h2>Добро пожаловать</h2>
-          <p>Войдите в свою учётную запись</p>
-          <div className="role-tabs">
-            {(["student", "college", "company"] as Role[]).map((r) => (
+          <h2>{mode === "login" ? "Добро пожаловать" : "Создание аккаунта"}</h2>
+          <p>
+            {mode === "login"
+              ? "Войдите в свою учётную запись"
+              : "Выберите роль и заполните данные"}
+          </p>
+          <div className="role-tabs" role="tablist" aria-label="Роль аккаунта">
+            {(["student", "college", "company"] as Role[]).map((item) => (
               <button
                 type="button"
-                className={role === r ? "active" : ""}
-                onClick={() => setRole(r)}
-                key={r}
+                role="tab"
+                aria-selected={role === item}
+                className={role === item ? "active" : ""}
+                onClick={() => switchRole(item)}
+                key={item}
               >
-                {r === "student" ? "Студент" : r === "college" ? "Техникум" : "Предприятие"}
+                {roleLabel(item)}
               </button>
             ))}
           </div>
-          <label>
-            <span>Логин</span>
-            <input placeholder="Введите логин" defaultValue="a.morozov" />
-          </label>
-          <label>
-            <span>Пароль</span>
-            <input type="password" placeholder="Введите пароль" defaultValue="password" />
-          </label>
-          <div className="login-options">
-            <label>
-              <input type="checkbox" defaultChecked />
-              Запомнить меня
-            </label>
-            <button type="button" onClick={() => setResetOpen(true)}>
-              Забыли пароль?
-            </button>
-          </div>
-          <Button type="submit">Войти</Button>
+          {mode === "login" ? (
+            <>
+              <label>
+                <span>Электронная почта</span>
+                <input
+                  type="email"
+                  placeholder="name@example.ru"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </label>
+              <label>
+                <span>Пароль</span>
+                <input
+                  type="password"
+                  placeholder="Введите пароль"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </label>
+              <div className="login-options">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(event) => setRemember(event.target.checked)}
+                  />
+                  Запомнить меня
+                </label>
+                <button type="button" onClick={() => setResetOpen(true)}>
+                  Забыли пароль?
+                </button>
+              </div>
+              {error && (
+                <p className="auth-error" role="alert">
+                  {error}
+                </p>
+              )}
+              <Button type="submit">Войти</Button>
+              <div className="auth-switch">
+                Нет аккаунта?{" "}
+                <button type="button" onClick={() => switchMode("register")}>
+                  Зарегистрироваться
+                </button>
+              </div>
+              <div className="demo-login">
+                <span>Быстрый вход (демо):</span>
+                <div>
+                  <button type="button" onClick={() => quickLogin("student")}>
+                    Студент
+                  </button>
+                  <button type="button" onClick={() => quickLogin("college")}>
+                    Техникум
+                  </button>
+                  <button type="button" onClick={() => quickLogin("company")}>
+                    Предприятие
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <label>
+                <span>Имя и фамилия</span>
+                <input
+                  placeholder="Например, Анна Петрова"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  required
+                  autoComplete="name"
+                />
+              </label>
+              <label>
+                <span>Электронная почта</span>
+                <input
+                  type="email"
+                  placeholder="name@example.ru"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </label>
+              {role === "student" ? (
+                <div className="form-grid auth-grid">
+                  <label>
+                    <span>Группа</span>
+                    <input
+                      placeholder="ИС-21"
+                      value={group}
+                      onChange={(event) => setGroup(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Специальность</span>
+                    <select value={specialty} onChange={(event) => setSpecialty(event.target.value)}>
+                      <option>Информационные системы</option>
+                      <option>Техническое обслуживание</option>
+                      <option>Электроснабжение</option>
+                      <option>Сетевое администрирование</option>
+                    </select>
+                  </label>
+                </div>
+              ) : (
+                <>
+                  <label>
+                    <span>Код организации</span>
+                    <input
+                      placeholder="Код, выданный организацией"
+                      value={orgCode}
+                      onChange={(event) => setOrgCode(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <p className="field-hint">
+                    Демо-коды: <b>MTK-2025</b> — техникум, <b>YANDEX-2025</b> — предприятие.
+                  </p>
+                  <label>
+                    <span>Должность</span>
+                    <input
+                      placeholder="Например, куратор практики"
+                      value={position}
+                      onChange={(event) => setPosition(event.target.value)}
+                      required
+                    />
+                  </label>
+                </>
+              )}
+              <div className="form-grid auth-grid">
+                <label>
+                  <span>Пароль</span>
+                  <input
+                    type="password"
+                    placeholder="Не менее 6 символов"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    autoComplete="new-password"
+                  />
+                </label>
+                <label>
+                  <span>Повторите пароль</span>
+                  <input
+                    type="password"
+                    placeholder="Ещё раз"
+                    value={confirm}
+                    onChange={(event) => setConfirm(event.target.value)}
+                    required
+                    autoComplete="new-password"
+                  />
+                </label>
+              </div>
+              <div className="login-options">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(event) => setRemember(event.target.checked)}
+                  />
+                  Запомнить меня
+                </label>
+              </div>
+              {error && (
+                <p className="auth-error" role="alert">
+                  {error}
+                </p>
+              )}
+              <Button type="submit">Зарегистрироваться</Button>
+              <div className="auth-switch">
+                Уже есть аккаунт?{" "}
+                <button type="button" onClick={() => switchMode("login")}>
+                  Войти
+                </button>
+              </div>
+            </>
+          )}
           <small>
             Проблемы со входом?{" "}
             <a className="support-link" href="mailto:support@praktika.pro">
@@ -2063,15 +2452,47 @@ function ConfirmModal({
   );
 }
 
-function Sitemap({ navigate }: { navigate: (p: Page) => void }) {
-  const links: { page: Page; title: string; text: string; icon: string }[] = [
-    { page: "home", title: "Предприятия", text: "Каталог предприятий и поиск практики", icon: "search" },
-    { page: "status", title: "Мои заявки", text: "Статус и история заявок", icon: "file" },
-    { page: "documents", title: "Документы", text: "Направления и договоры", icon: "shield" },
-    { page: "profile", title: "Профиль", text: "Личные данные и уведомления", icon: "settings" },
-    { page: "faq", title: "Помощь и FAQ", text: "Ответы на частые вопросы", icon: "help" },
-    { page: "login", title: "Вход", text: "Авторизация и выбор роли", icon: "logout" },
-  ];
+function Sitemap({ role, navigate }: { role: Role; navigate: (p: Page) => void }) {
+  const links: { page: Page; title: string; text: string; icon: string }[] =
+    role === "student"
+      ? [
+          {
+            page: "home",
+            title: "Предприятия",
+            text: "Каталог предприятий и поиск практики",
+            icon: "search",
+          },
+          { page: "status", title: "Мои заявки", text: "Статус и история заявок", icon: "file" },
+          {
+            page: "documents",
+            title: "Документы",
+            text: "Направления и договоры",
+            icon: "shield",
+          },
+          {
+            page: "apply",
+            title: "Новая заявка",
+            text: "Отправить заявку на практику",
+            icon: "upload",
+          },
+          {
+            page: "profile",
+            title: "Профиль",
+            text: "Личные данные и уведомления",
+            icon: "settings",
+          },
+          { page: "faq", title: "Помощь и FAQ", text: "Ответы на частые вопросы", icon: "help" },
+        ]
+      : [
+          { page: "home", title: "Обзор", text: "Заявки и статистика организации", icon: "file" },
+          {
+            page: "profile",
+            title: "Профиль и команда",
+            text: "Сотрудники, работающие с практикой",
+            icon: "users",
+          },
+          { page: "faq", title: "Помощь и FAQ", text: "Ответы на частые вопросы", icon: "help" },
+        ];
   return (
     <main className="container page narrow fade">
       <Breadcrumbs items={["Карта сайта"]} navigate={navigate} />
@@ -2113,8 +2534,13 @@ function NotFound({ navigate }: { navigate: (p: Page) => void }) {
 }
 
 export default function App() {
-  const [role, setRole] = useState<Role>("student"),
-    [page, setPage] = useState<Page>("home"),
+  const [accounts, setAccounts] = useState<User[]>(() => loadUsers());
+  const [user, setUser] = useState<User | null>(() => {
+    const session = loadSession();
+    if (!session) return null;
+    return loadUsers().find((item) => item.id === session.userId) ?? null;
+  });
+  const [page, setPage] = useState<Page>("home"),
     [companyId, setCompanyId] = useState(1),
     [dark, setDark] = useState(false),
     [menu, setMenu] = useState(false);
@@ -2157,28 +2583,72 @@ export default function App() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [verify, preview, confirm]);
-  const login = (r: Role) => {
-    setRole(r);
+  const loginAs = (account: User, remember: boolean) => {
+    saveSession(account.id, remember);
+    setUser(account);
     setPage("home");
-    toast("success", "Вы успешно вошли в систему");
+    setMenu(false);
+    toast("success", `Вы вошли как ${account.name}`);
+  };
+  const registerUser = (account: User, remember: boolean) => {
+    const next = [...accounts, account];
+    setAccounts(next);
+    saveUsers(next);
+    saveSession(account.id, remember);
+    setUser(account);
+    setPage("home");
+    toast("success", "Аккаунт создан. Добро пожаловать!");
+  };
+  const updateUser = (patch: Partial<User>) => {
+    if (!user) return;
+    const updated = { ...user, ...patch };
+    const next = accounts.map((item) => (item.id === user.id ? updated : item));
+    setAccounts(next);
+    saveUsers(next);
+    setUser(updated);
+    toast("success", "Настройки сохранены");
   };
   const logout = () => {
-    setPage("login");
+    clearSession();
+    setUser(null);
+    setPage("home");
     setMenu(false);
+    setToasts([]);
   };
-  if (page === "login")
+  if (!user)
     return (
       <>
-        <Login onLogin={login} />
+        <AuthPage accounts={accounts} onLogin={loginAs} onRegister={registerUser} />
         <ToastStack toasts={toasts} />
       </>
     );
+  const role = user.role;
+  const team =
+    role === "student"
+      ? []
+      : accounts.filter(
+          (item) =>
+            item.id !== user.id && item.role === role && item.organization === user.organization,
+        );
   let content: React.ReactNode;
   if (page === "404") content = <NotFound navigate={navigate} />;
-  else if (role === "college" || role === "company")
+  else if (page === "sitemap") content = <Sitemap role={role} navigate={navigate} />;
+  else if (page === "profile")
+    content = (
+      <Profile
+        user={user}
+        team={team}
+        navigate={navigate}
+        toast={toast}
+        logout={logout}
+        onSave={updateUser}
+      />
+    );
+  else if (page === "faq") content = <FAQ navigate={navigate} />;
+  else if (role !== "student")
     content = (
       <AdminDashboard
-        role={role}
+        user={user}
         toast={toast}
         verify={() => setVerify(true)}
         preview={(name) => setPreview(name)}
@@ -2195,22 +2665,17 @@ export default function App() {
   else if (page === "status") content = <StatusDashboard navigate={navigate} />;
   else if (page === "documents")
     content = <Documents navigate={navigate} toast={toast} preview={(name) => setPreview(name)} />;
-  else if (page === "profile")
-    content = <Profile navigate={navigate} toast={toast} logout={logout} />;
-  else if (page === "faq") content = <FAQ navigate={navigate} />;
-  else if (page === "sitemap") content = <Sitemap navigate={navigate} />;
   else content = <NotFound navigate={navigate} />;
   return (
     <div className="app">
       <Header
-        role={role}
+        user={user}
         page={page}
         dark={dark}
         menu={menu}
         setDark={setDark}
         setMenu={setMenu}
         navigate={navigate}
-        setRole={setRole}
         logout={logout}
       />
       {content}
