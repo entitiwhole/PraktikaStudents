@@ -2366,3 +2366,446 @@ footer button:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Интерактивность и плавные переходы ---------- */
+body,
+.header,
+.panel,
+footer,
+.stat,
+.document,
+.sitemap-card,
+.notif-menu,
+.toast,
+.search,
+.combobox,
+.chips button,
+.icon-btn,
+.form input,
+.form select {
+  transition:
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.btn {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0) scale(0.985);
+}
+.btn-primary:hover {
+  box-shadow: 0 7px 18px rgba(37, 99, 235, 0.28);
+}
+.btn-secondary:hover,
+.btn-export:hover {
+  box-shadow: 0 5px 14px rgba(31, 43, 68, 0.08);
+}
+
+.nav button,
+footer button,
+.breadcrumbs button,
+.login-options button,
+.support-link {
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    opacity 0.18s ease;
+}
+.icon-btn {
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.12s ease;
+}
+.icon-btn:active {
+  transform: scale(0.94);
+}
+.chips button,
+.pagination button,
+.table-more,
+.round-link {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.14s ease;
+}
+.chips button:hover:not(.active),
+.pagination button:hover:not(:disabled):not(.active) {
+  transform: translateY(-1px);
+}
+.company-logo {
+  transition: transform 0.22s ease;
+}
+.company-card:hover .company-logo {
+  transform: scale(1.05) rotate(-2deg);
+}
+.pagination button:disabled {
+  opacity: 0.4;
+}
+
+/* Уведомления */
+.notification-wrap {
+  position: relative;
+}
+.notification.active {
+  background: var(--surface-2);
+  color: var(--blue);
+}
+.notif-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 312px;
+  max-width: calc(100vw - 36px);
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  z-index: 60;
+}
+.notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.notif-head b {
+  font-size: 12px;
+}
+.notif-head button {
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 700;
+}
+.notif-head button:hover {
+  text-decoration: underline;
+}
+.notif-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 7px;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+.notif-item:hover {
+  background: var(--surface-2);
+}
+.notif-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--blue);
+  margin-top: 5px;
+  flex: none;
+  transition: background-color 0.2s ease;
+}
+.notif-item.read .notif-dot {
+  background: var(--border);
+}
+.notif-item.read b,
+.notif-item.read small {
+  opacity: 0.6;
+}
+.notif-item > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.notif-item b {
+  font-size: 11px;
+}
+.notif-item small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.notif-empty {
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  padding: 18px;
+}
+
+/* Вкладки документов */
+.doc-tabs {
+  margin-bottom: 20px;
+}
+.doc-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.doc-tabs button span {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+.doc-tabs button.active span {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Раскрывающиеся строки истории */
+.table-more.active {
+  color: var(--blue);
+  background: var(--surface-2);
+}
+.table-more .icon {
+  transition: transform 0.22s ease;
+}
+.table-more.active .icon {
+  transform: rotate(180deg);
+}
+.detail-row td {
+  background: var(--surface-2);
+  padding: 0 18px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.row-detail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding-top: 18px;
+}
+.row-detail > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.row-detail small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.row-detail b {
+  font-size: 12px;
+  font-weight: 600;
+}
+.row-detail-comment {
+  grid-column: span 2;
+}
+.row-detail-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Карта сайта */
+.sitemap-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.sitemap-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  text-align: left;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+.sitemap-card > span {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: var(--blue);
+}
+.sitemap-card > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.sitemap-card b {
+  font-size: 13px;
+}
+.sitemap-card small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.sitemap-card > .icon {
+  color: var(--muted);
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+.sitemap-card:hover {
+  border-color: color-mix(in srgb, var(--blue) 45%, var(--border));
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+.sitemap-card:hover > .icon {
+  color: var(--blue);
+  transform: translateX(3px);
+}
+
+/* FAQ: плавное раскрытие */
+.faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+.faq-answer > div {
+  overflow: hidden;
+}
+.faq-answer.open {
+  grid-template-rows: 1fr;
+}
+.faq article button .icon {
+  transition: transform 0.25s ease;
+}
+
+/* Модальные окна */
+.modal-backdrop {
+  animation: backdrop-in 0.18s ease both;
+}
+.modal {
+  animation: modal-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 18px 0;
+  text-align: left;
+}
+.modal-field span {
+  font-size: 11px;
+  font-weight: 700;
+}
+.modal-field input {
+  height: 43px;
+  padding: 0 12px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--input-bg);
+  color: var(--text);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.modal-field input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+.support-link {
+  color: var(--blue);
+}
+.support-link:hover {
+  color: var(--blue-dark);
+  text-decoration: underline;
+}
+
+/* Аватар */
+img.avatar {
+  object-fit: cover;
+}
+
+@media (max-width: 650px) {
+  .row-detail {
+    grid-template-columns: 1fr;
+  }
+  .row-detail-comment {
+    grid-column: auto;
+  }
+  .row-detail-actions {
+    justify-content: stretch;
+  }
+  .row-detail-actions .btn {
+    flex: 1;
+  }
+  .sitemap-grid {
+    grid-template-columns: 1fr;
+  }
+  .doc-tabs {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .pdf-preview,
+  .pdf-preview * {
+    visibility: visible;
+  }
+  .pdf-preview {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    background: #fff;
+    overflow: visible;
+  }
+  .pdf-preview article {
+    box-shadow: none;
+    width: 100%;
+  }
+}
+
+.directory { scroll-margin-top: 90px; }

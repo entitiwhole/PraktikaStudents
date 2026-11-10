@@ -1,4 +1,13 @@
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  DragEvent,
+  FormEvent,
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type Role = "student" | "college" | "company";
 type Page =
@@ -10,6 +19,7 @@ type Page =
   | "profile"
   | "faq"
   | "login"
+  | "sitemap"
   | "404";
 type Toast = { id: number; kind: "success" | "error"; text: string };
 
@@ -80,10 +90,44 @@ const companies = [
     description:
       "Практика для будущих специалистов по электроснабжению, учёту энергии и работе с клиентами.",
   },
+  {
+    id: 7,
+    name: "Сбер",
+    short: "СБ",
+    sector: "IT",
+    address: "Москва, ул. Вавилова, 19",
+    places: 10,
+    color: "#0A8F3C",
+    description:
+      "Практика в командах цифрового бизнеса: аналитика данных, разработка сервисов и работа с клиентскими продуктами.",
+  },
+  {
+    id: 8,
+    name: "РЖД",
+    short: "РЖД",
+    sector: "Транспорт",
+    address: "Москва, Каланчёвская пл., 1",
+    places: 14,
+    color: "#C81E1E",
+    description:
+      "Производственная практика в подразделениях перевозок, инфраструктуры и цифровой логистики.",
+  },
+  {
+    id: 9,
+    name: "Ростех",
+    short: "РТ",
+    sector: "Промышленность",
+    address: "Москва, ул. Усачёва, 24",
+    places: 7,
+    color: "#0E7490",
+    description:
+      "Практика на промышленных предприятиях холдинга: инженерия, автоматизация и техническое сопровождение.",
+  },
 ];
 
-const applications = [
+const initialApplications = [
   {
+    id: 1,
     name: "Алексей Морозов",
     group: "ИС-21",
     company: "Яндекс Практика",
@@ -92,6 +136,7 @@ const applications = [
     status: "На проверке",
   },
   {
+    id: 2,
     name: "Мария Иванова",
     group: "ЭЛ-22",
     company: "Россети Московский регион",
@@ -100,6 +145,7 @@ const applications = [
     status: "Одобрена",
   },
   {
+    id: 3,
     name: "Илья Соколов",
     group: "ТО-21",
     company: "Московский метрополитен",
@@ -108,6 +154,7 @@ const applications = [
     status: "Ожидает",
   },
   {
+    id: 4,
     name: "Анна Кузнецова",
     group: "ИС-22",
     company: "VK Tech",
@@ -212,6 +259,13 @@ const icons: Record<string, React.ReactNode> = {
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
+    </>
+  ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9a2.5 2.5 0 1 1 4 2c-.9.7-1.5 1.2-1.5 2.3" />
+      <path d="M12 17h.01" />
     </>
   ),
   logout: (
@@ -335,6 +389,49 @@ function Header({
 }) {
   const roleLabel =
     role === "student" ? "Студент" : role === "college" ? "Техникум" : "Предприятие";
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: "Заявка одобрена",
+      text: "Россети Московский регион",
+      time: "2 ч назад",
+      read: false,
+    },
+    {
+      id: 2,
+      title: "Документ проверен",
+      text: "Направление на практику",
+      time: "вчера",
+      read: false,
+    },
+    {
+      id: 3,
+      title: "Новая вакансия",
+      text: "Сбер · 10 мест",
+      time: "2 дня назад",
+      read: false,
+    },
+  ]);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const unread = notifications.filter((n) => !n.read).length;
+  useEffect(() => {
+    if (!notifOpen) return;
+    const handler = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setNotifOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [notifOpen]);
   return (
     <header className="header">
       <div className="header-inner">
@@ -401,10 +498,54 @@ function Header({
           >
             {dark ? <Icon name="sun" /> : <Icon name="moon" />}
           </button>
-          <button className="icon-btn notification" aria-label="Уведомления: 3 новых">
-            <Icon name="bell" size={24} />
-            <span>3</span>
-          </button>
+          <div className="notification-wrap" ref={notifRef}>
+            <button
+              className={`icon-btn notification ${notifOpen ? "active" : ""}`}
+              onClick={() => setNotifOpen((open) => !open)}
+              aria-label={unread ? `Уведомления: ${unread} новых` : "Уведомления"}
+              aria-expanded={notifOpen}
+            >
+              <Icon name="bell" size={24} />
+              {unread > 0 && <span>{unread}</span>}
+            </button>
+            {notifOpen && (
+              <div className="notif-menu fade" role="menu" aria-label="Уведомления">
+                <div className="notif-head">
+                  <b>Уведомления</b>
+                  <button
+                    onClick={() =>
+                      setNotifications((items) => items.map((item) => ({ ...item, read: true })))
+                    }
+                  >
+                    Прочитать все
+                  </button>
+                </div>
+                {notifications.map((item) => (
+                  <button
+                    className={`notif-item ${item.read ? "read" : ""}`}
+                    key={item.id}
+                    role="menuitem"
+                    onClick={() => {
+                      setNotifications((items) =>
+                        items.map((x) => (x.id === item.id ? { ...x, read: true } : x)),
+                      );
+                      navigate(item.id === 3 ? "home" : "status");
+                      setNotifOpen(false);
+                    }}
+                  >
+                    <span className="notif-dot" aria-hidden="true" />
+                    <span>
+                      <b>{item.title}</b>
+                      <small>
+                        {item.text} · {item.time}
+                      </small>
+                    </span>
+                  </button>
+                ))}
+                {!notifications.length && <p className="notif-empty">Новых уведомлений нет</p>}
+              </div>
+            )}
+          </div>
           <div className="user-menu">
             <button
               className="user"
@@ -466,9 +607,13 @@ function StudentHome({
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("popular");
   const [loading, setLoading] = useState(false);
+  const [listPage, setListPage] = useState(1);
+  const PAGE_SIZE = 6;
+  const sectors = useMemo(() => ["Все", ...new Set(companies.map((c) => c.sector))], []);
   const updateSector = (value: string) => {
     setLoading(true);
     setSector(value);
+    setListPage(1);
     setTimeout(() => setLoading(false), 650);
   };
   const filtered = useMemo(
@@ -485,6 +630,14 @@ function StudentHome({
   const reset = () => {
     setSearch("");
     setSector("Все");
+    setListPage(1);
+  };
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(listPage, totalPages);
+  const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const goToPage = (next: number) => {
+    setListPage(next);
+    document.querySelector(".directory")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   return (
     <main>
@@ -532,7 +685,13 @@ function StudentHome({
           </div>
           <label className="sort">
             Сортировка:
-            <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value);
+                setListPage(1);
+              }}
+            >
               <option value="popular">По популярности</option>
               <option value="places">По числу мест</option>
             </select>
@@ -540,7 +699,7 @@ function StudentHome({
         </div>
         <div className="filters">
           <div className="chips" aria-label="Фильтр по сфере">
-            {["Все", "Транспорт", "IT", "Энергетика"].map((x) => (
+            {sectors.map((x) => (
               <button
                 key={x}
                 className={sector === x ? "active" : ""}
@@ -554,7 +713,10 @@ function StudentHome({
             <Icon name="search" size={19} />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setListPage(1);
+              }}
               placeholder="Найти предприятие"
               aria-label="Поиск предприятия"
             />
@@ -578,8 +740,8 @@ function StudentHome({
             ))}
           </div>
         ) : filtered.length ? (
-          <div className="company-grid fade">
-            {filtered.map((c) => (
+          <div className="company-grid fade" key={`${sector}-${search}-${sort}-${safePage}`}>
+            {visible.map((c) => (
               <article className="company-card" key={c.id}>
                 <div className="company-top">
                   <div className="company-logo" style={{ background: c.color }}>
@@ -614,15 +776,30 @@ function StudentHome({
         ) : (
           <EmptyState onReset={reset} />
         )}
-        {filtered.length > 0 && (
+        {filtered.length > 0 && totalPages > 1 && (
           <div className="pagination" aria-label="Пагинация">
-            <button disabled>
+            <button
+              onClick={() => goToPage(safePage - 1)}
+              disabled={safePage === 1}
+              aria-label="Предыдущая страница"
+            >
               <Icon name="chevron" size={16} />
             </button>
-            <button className="active">1</button>
-            <button onClick={() => toast("success", "Загружена следующая страница")}>2</button>
-            <button onClick={() => toast("success", "Загружена следующая страница")}>3</button>
-            <button onClick={() => toast("success", "Загружена следующая страница")}>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
+              <button
+                key={number}
+                className={safePage === number ? "active" : ""}
+                onClick={() => goToPage(number)}
+                aria-current={safePage === number ? "page" : undefined}
+              >
+                {number}
+              </button>
+            ))}
+            <button
+              onClick={() => goToPage(safePage + 1)}
+              disabled={safePage === totalPages}
+              aria-label="Следующая страница"
+            >
               <Icon name="arrow" size={16} />
             </button>
           </div>
@@ -895,7 +1072,28 @@ function ApplyForm({
   );
 }
 
-function StatusDashboard({ navigate }: { navigate: (p: Page) => void }) {
+function StatusDashboard({ navigate }: { navigate: (p: Page, id?: number) => void }) {
+  const [openRow, setOpenRow] = useState<number | null>(null);
+  const history = [
+    {
+      id: 2,
+      company: "Россети Московский регион",
+      date: "03.03.2025",
+      specialty: "Информационные системы",
+      status: "Одобрена",
+      companyId: 3,
+      comment: "Практика подтверждена, куратор свяжется с вами до 15 мая.",
+    },
+    {
+      id: 4,
+      company: "VK Tech",
+      date: "15.01.2025",
+      specialty: "Информационные системы",
+      status: "Отклонена",
+      companyId: 5,
+      comment: "Набор на этот период закрыт. Можно подать заявку на следующую волну.",
+    },
+  ];
   return (
     <main className="container page fade">
       <Breadcrumbs items={["Мои заявки"]} navigate={navigate} />
@@ -951,36 +1149,63 @@ function StatusDashboard({ navigate }: { navigate: (p: Page) => void }) {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>
-                  <b>Россети Московский регион</b>
-                </td>
-                <td>03.03.2025</td>
-                <td>Информационные системы</td>
-                <td>
-                  <Badge status="Одобрена" />
-                </td>
-                <td>
-                  <button className="table-more" aria-label="Подробнее">
-                    <Icon name="chevron" />
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <b>VK Tech</b>
-                </td>
-                <td>15.01.2025</td>
-                <td>Информационные системы</td>
-                <td>
-                  <Badge status="Отклонена" />
-                </td>
-                <td>
-                  <button className="table-more">
-                    <Icon name="chevron" />
-                  </button>
-                </td>
-              </tr>
+              {history.map((h) => (
+                <Fragment key={h.id}>
+                  <tr className={openRow === h.id ? "open" : ""}>
+                    <td>
+                      <b>{h.company}</b>
+                    </td>
+                    <td>{h.date}</td>
+                    <td>{h.specialty}</td>
+                    <td>
+                      <Badge status={h.status} />
+                    </td>
+                    <td>
+                      <button
+                        className={`table-more ${openRow === h.id ? "active" : ""}`}
+                        aria-label={`Подробнее о заявке в ${h.company}`}
+                        aria-expanded={openRow === h.id}
+                        onClick={() => setOpenRow(openRow === h.id ? null : h.id)}
+                      >
+                        <Icon name="chevron" />
+                      </button>
+                    </td>
+                  </tr>
+                  {openRow === h.id && (
+                    <tr className="detail-row">
+                      <td colSpan={5}>
+                        <div className="row-detail fade">
+                          <div>
+                            <small>Специальность</small>
+                            <b>{h.specialty}</b>
+                          </div>
+                          <div>
+                            <small>Дата подачи</small>
+                            <b>{h.date}</b>
+                          </div>
+                          <div className="row-detail-comment">
+                            <small>Комментарий</small>
+                            <b>{h.comment}</b>
+                          </div>
+                          <div className="row-detail-actions">
+                            <Button
+                              variant="secondary"
+                              onClick={() => navigate("company", h.companyId)}
+                            >
+                              О предприятии
+                            </Button>
+                            {h.status === "Отклонена" && (
+                              <Button onClick={() => navigate("apply", h.companyId)}>
+                                Подать снова
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
             </tbody>
           </table>
         </div>
@@ -989,13 +1214,75 @@ function StatusDashboard({ navigate }: { navigate: (p: Page) => void }) {
   );
 }
 
+type DocumentItem = {
+  id: number;
+  name: string;
+  type: "PDF" | "DOC";
+  date: string;
+  size: string;
+  status: string;
+};
+
+const initialDocuments: DocumentItem[] = [
+  {
+    id: 1,
+    name: "Направление на практику",
+    type: "PDF",
+    date: "12 мая 2025",
+    size: "1,8 МБ",
+    status: "Подлинный",
+  },
+  {
+    id: 2,
+    name: "Согласие на обработку данных",
+    type: "PDF",
+    date: "10 мая 2025",
+    size: "320 КБ",
+    status: "На проверке",
+  },
+  {
+    id: 3,
+    name: "Договор о практике",
+    type: "PDF",
+    date: "8 мая 2025",
+    size: "960 КБ",
+    status: "Подлинный",
+  },
+];
+
 function Documents({
   navigate,
   toast,
+  preview,
 }: {
   navigate: (p: Page) => void;
   toast: (k: "success" | "error", t: string) => void;
+  preview: (name: string) => void;
 }) {
+  const [docs, setDocs] = useState(initialDocuments);
+  const [tab, setTab] = useState("Все");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const tabs = [
+    { label: "Все", count: docs.length },
+    { label: "Подлинные", count: docs.filter((d) => d.status === "Подлинный").length },
+    { label: "На проверке", count: docs.filter((d) => d.status === "На проверке").length },
+  ];
+  const visibleDocs = docs.filter((doc) =>
+    tab === "Все" ? true : tab === "Подлинные" ? doc.status === "Подлинный" : doc.status === "На проверке",
+  );
+  const addFiles = (files: FileList | null) => {
+    if (!files?.length) return;
+    const added: DocumentItem[] = Array.from(files).map((file, index) => ({
+      id: Date.now() + index,
+      name: file.name.replace(/\.[^.]+$/, ""),
+      type: file.name.toLowerCase().endsWith(".pdf") ? "PDF" : "DOC",
+      date: new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }),
+      size: `${Math.max(1, Math.round(file.size / 1024))} КБ`,
+      status: "На проверке",
+    }));
+    setDocs((items) => [...added, ...items]);
+    toast("success", added.length > 1 ? "Документы добавлены" : "Документ добавлен");
+  };
   return (
     <main className="container page fade">
       <Breadcrumbs items={["Мои документы"]} navigate={navigate} />
@@ -1004,45 +1291,71 @@ function Documents({
           <h1>Мои документы</h1>
           <p>Документы для прохождения практики</p>
         </div>
-        <Button icon="upload" onClick={() => toast("success", "Документ добавлен")}>
-          Добавить документ
-        </Button>
+        <div className="heading-actions">
+          <Button icon="upload" onClick={() => inputRef.current?.click()}>
+            Добавить документ
+          </Button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".pdf,.doc,.docx"
+            multiple
+            hidden
+            onChange={(event) => {
+              addFiles(event.target.files);
+              event.target.value = "";
+            }}
+          />
+        </div>
       </div>
-      <div className="document-grid">
-        <article className="panel document">
-          <span className="pdf">PDF</span>
-          <div>
-            <h3>Направление на практику</h3>
-            <p>Добавлен 12 мая 2025 · 1,8 МБ</p>
-            <Badge status="Подлинный" />
-          </div>
-          <button onClick={() => toast("success", "Скачивание началось")} aria-label="Скачать">
-            <Icon name="download" />
+      <div className="chips doc-tabs" role="tablist" aria-label="Фильтр документов">
+        {tabs.map((item) => (
+          <button
+            key={item.label}
+            role="tab"
+            aria-selected={tab === item.label}
+            className={tab === item.label ? "active" : ""}
+            onClick={() => setTab(item.label)}
+          >
+            {item.label}
+            <span>{item.count}</span>
           </button>
-        </article>
-        <article className="panel document">
-          <span className="pdf">PDF</span>
-          <div>
-            <h3>Согласие на обработку данных</h3>
-            <p>Добавлен 10 мая 2025 · 320 КБ</p>
-            <Badge status="На проверке" />
-          </div>
-          <button onClick={() => toast("success", "Скачивание началось")} aria-label="Скачать">
-            <Icon name="download" />
-          </button>
-        </article>
-        <article className="panel document">
-          <span className="pdf">PDF</span>
-          <div>
-            <h3>Договор о практике</h3>
-            <p>Добавлен 8 мая 2025 · 960 КБ</p>
-            <Badge status="Подлинный" />
-          </div>
-          <button onClick={() => toast("success", "Скачивание началось")} aria-label="Скачать">
-            <Icon name="download" />
-          </button>
-        </article>
+        ))}
       </div>
+      {visibleDocs.length ? (
+        <div className="document-grid fade" key={tab}>
+          {visibleDocs.map((doc) => (
+            <article className="panel document" key={doc.id}>
+              <span className={doc.type === "PDF" ? "pdf" : "doc"}>{doc.type}</span>
+              <div>
+                <h3>{doc.name}</h3>
+                <p>
+                  Добавлен {doc.date} · {doc.size}
+                </p>
+                <Badge status={doc.status} />
+              </div>
+              <button
+                onClick={() => preview(`${doc.name}.pdf`)}
+                aria-label={`Открыть документ: ${doc.name}`}
+                title="Открыть документ"
+              >
+                <Icon name="file" />
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="empty fade">
+          <div className="empty-icon">
+            <Icon name="file" size={28} />
+          </div>
+          <h3>В этой категории документов пока нет</h3>
+          <p>Загрузите документ или выберите другую вкладку.</p>
+          <Button variant="secondary" onClick={() => inputRef.current?.click()}>
+            Загрузить документ
+          </Button>
+        </div>
+      )}
     </main>
   );
 }
@@ -1078,29 +1391,36 @@ function AdminDashboard({
   verify,
   confirm,
   preview,
+  apps,
+  onStatusChange,
 }: {
   role: "college" | "company";
   toast: (k: "success" | "error", t: string) => void;
   verify: () => void;
   confirm: (text: string, action: () => void) => void;
   preview: (name: string) => void;
+  apps: typeof initialApplications;
+  onStatusChange: (id: number, status: string) => void;
 }) {
   const [status, setStatus] = useState("Все статусы"),
     [query, setQuery] = useState("");
-  const rows = applications.filter(
+  const rows = apps.filter(
     (a) =>
       (status === "Все статусы" || a.status === status) &&
       a.name.toLowerCase().includes(query.toLowerCase()),
   );
+  const pending = apps.filter((a) => a.status === "На проверке" || a.status === "Ожидает").length;
+  const approved = apps.filter((a) => a.status === "Одобрена").length;
   const exportCsv = () => {
     const csv = [
       "ФИО,Группа,Предприятие,Статус",
-      ...applications.map((a) => `${a.name},${a.group},${a.company},${a.status}`),
+      ...apps.map((a) => `${a.name},${a.group},${a.company},${a.status}`),
     ].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = "applications.csv";
     a.click();
+    URL.revokeObjectURL(a.href);
     toast("success", "CSV-файл сформирован");
   };
   return (
@@ -1125,15 +1445,15 @@ function AdminDashboard({
         {role === "college" ? (
           <>
             <StatsCard value="124" label="Всего заявок" trend="+12 за неделю" icon="file" />
-            <StatsCard value="38" label="На проверке" icon="search" />
+            <StatsCard value={String(pending)} label="На проверке" icon="search" />
             <StatsCard value="72%" label="Одобрено" trend="+5% к апрелю" icon="check" />
             <StatsCard value="18" label="Предприятий" icon="users" />
           </>
         ) : (
           <>
-            <StatsCard value="24" label="Новых заявки" trend="+8 за неделю" icon="file" />
+            <StatsCard value={String(pending)} label="Новых заявки" trend="+8 за неделю" icon="file" />
             <StatsCard value="16" label="Свободных мест" trend="-2 за сегодня" icon="users" />
-            <StatsCard value="41" label="Одобрено" trend="за этот семестр" icon="check" />
+            <StatsCard value={String(approved)} label="Одобрено" trend="за этот семестр" icon="check" />
           </>
         )}
       </div>
@@ -1221,11 +1541,13 @@ function AdminDashboard({
                             title="Одобрить заявку"
                             data-tip="Одобрить"
                             onClick={() =>
-                              confirm(`Одобрить заявку студента ${a.name}?`, () =>
-                                toast("success", "Заявка одобрена"),
-                              )
+                              confirm(`Одобрить заявку студента ${a.name}?`, () => {
+                                onStatusChange(a.id, "Одобрена");
+                                toast("success", "Заявка одобрена");
+                              })
                             }
                             aria-label="Одобрить"
+                            disabled={a.status === "Одобрена"}
                           >
                             <Icon name="check" size={16} />
                             Одобрить
@@ -1235,11 +1557,13 @@ function AdminDashboard({
                             title="Отклонить заявку"
                             data-tip="Отклонить"
                             onClick={() =>
-                              confirm(`Отклонить заявку студента ${a.name}?`, () =>
-                                toast("error", "Заявка отклонена"),
-                              )
+                              confirm(`Отклонить заявку студента ${a.name}?`, () => {
+                                onStatusChange(a.id, "Отклонена");
+                                toast("error", "Заявка отклонена");
+                              })
                             }
                             aria-label="Отклонить"
+                            disabled={a.status === "Отклонена"}
                           >
                             <Icon name="x" size={16} />
                             Отклонить
@@ -1274,6 +1598,8 @@ function Profile({
   toast: (k: "success" | "error", t: string) => void;
   logout: () => void;
 }) {
+  const avatarInput = useRef<HTMLInputElement>(null);
+  const [avatar, setAvatar] = useState<string | null>(null);
   return (
     <main className="container page narrow fade">
       <Breadcrumbs items={["Настройки профиля"]} navigate={navigate} />
@@ -1289,12 +1615,34 @@ function Profile({
         }}
       >
         <div className="profile-head">
-          <button className="profile-avatar" type="button" aria-label="Изменить фото профиля">
-            <span className="avatar big">АМ</span>
+          <button
+            className="profile-avatar"
+            type="button"
+            aria-label="Изменить фото профиля"
+            onClick={() => avatarInput.current?.click()}
+          >
+            {avatar ? (
+              <img className="avatar big" src={avatar} alt="Фото профиля" />
+            ) : (
+              <span className="avatar big">АМ</span>
+            )}
             <span className="avatar-edit">
               <Icon name="pencil" size={18} />
             </span>
           </button>
+          <input
+            ref={avatarInput}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              setAvatar(URL.createObjectURL(file));
+              toast("success", "Фото профиля обновлено");
+              event.target.value = "";
+            }}
+          />
           <div>
             <h3>Алексей Морозов</h3>
             <p>Студент · ИС-21</p>
@@ -1369,7 +1717,11 @@ function FAQ({ navigate }: { navigate: (p: Page) => void }) {
               <b>{q[0]}</b>
               <Icon name="down" />
             </button>
-            {open === i && <p className="fade">{q[1]}</p>}
+            <div className={`faq-answer ${open === i ? "open" : ""}`}>
+              <div>
+                <p>{q[1]}</p>
+              </div>
+            </div>
           </article>
         ))}
       </div>
@@ -1379,15 +1731,17 @@ function FAQ({ navigate }: { navigate: (p: Page) => void }) {
 
 function Login({ onLogin }: { onLogin: (r: Role) => void }) {
   const [role, setRole] = useState<Role>("student");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   return (
     <main className="login-page">
       <div className="login-side">
-        <button className="brand light">
+        <div className="brand light">
           <span className="brand-mark">
             <Icon name="check" />
           </span>
           <span>Практика.ПРО</span>
-        </button>
+        </div>
         <div>
           <span className="eyebrow">ЕДИНАЯ ПЛАТФОРМА</span>
           <h1>
@@ -1436,14 +1790,73 @@ function Login({ onLogin }: { onLogin: (r: Role) => void }) {
               <input type="checkbox" defaultChecked />
               Запомнить меня
             </label>
-            <button type="button">Забыли пароль?</button>
+            <button type="button" onClick={() => setResetOpen(true)}>
+              Забыли пароль?
+            </button>
           </div>
           <Button type="submit">Войти</Button>
           <small>
-            Проблемы со входом? <button type="button">Обратиться в поддержку</button>
+            Проблемы со входом?{" "}
+            <a className="support-link" href="mailto:support@praktika.pro">
+              Обратиться в поддержку
+            </a>
           </small>
         </form>
       </div>
+      {resetOpen && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-title"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setResetOpen(false);
+          }}
+        >
+          <div className="modal panel fade">
+            <button
+              className="modal-close"
+              onClick={() => setResetOpen(false)}
+              aria-label="Закрыть"
+            >
+              <Icon name="close" />
+            </button>
+            <div className={`verify-icon ${resetSent ? "ok" : ""}`}>
+              <Icon name={resetSent ? "check" : "lock"} size={32} />
+            </div>
+            <h2 id="reset-title">
+              {resetSent ? "Письмо отправлено" : "Восстановление пароля"}
+            </h2>
+            {resetSent ? (
+              <>
+                <p>Мы отправили ссылку для сброса пароля на указанную почту.</p>
+                <Button
+                  onClick={() => {
+                    setResetOpen(false);
+                    setResetSent(false);
+                  }}
+                >
+                  Готово
+                </Button>
+              </>
+            ) : (
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setResetSent(true);
+                }}
+              >
+                <p>Укажите электронную почту, и мы отправим ссылку для восстановления.</p>
+                <label className="modal-field">
+                  <span>Электронная почта</span>
+                  <input type="email" placeholder="name@example.ru" required />
+                </label>
+                <Button type="submit">Отправить ссылку</Button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -1472,7 +1885,15 @@ function VerificationModal({
     return () => clearInterval(t);
   }, []);
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="verify-title">
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="verify-title"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) close();
+      }}
+    >
       <div className="modal panel fade">
         <button className="modal-close" onClick={close} aria-label="Закрыть">
           <Icon name="close" />
@@ -1527,7 +1948,15 @@ function VerificationModal({
 
 function PdfPreviewModal({ name, close }: { name: string; close: () => void }) {
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="preview-title"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) close();
+      }}
+    >
       <div className="pdf-modal panel fade">
         <div className="pdf-modal-head">
           <div>
@@ -1583,7 +2012,7 @@ function PdfPreviewModal({ name, close }: { name: string; close: () => void }) {
             <Icon name="shield" size={17} />
             Защищённый предпросмотр
           </span>
-          <Button variant="secondary" icon="download">
+          <Button variant="secondary" icon="download" onClick={() => window.print()}>
             Скачать PDF
           </Button>
         </div>
@@ -1602,7 +2031,14 @@ function ConfirmModal({
   action: () => void;
 }) {
   return (
-    <div className="modal-backdrop" role="alertdialog" aria-modal="true">
+    <div
+      className="modal-backdrop"
+      role="alertdialog"
+      aria-modal="true"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) close();
+      }}
+    >
       <div className="modal confirm panel fade">
         <div className="verify-icon warn">
           <Icon name="file" />
@@ -1627,6 +2063,44 @@ function ConfirmModal({
   );
 }
 
+function Sitemap({ navigate }: { navigate: (p: Page) => void }) {
+  const links: { page: Page; title: string; text: string; icon: string }[] = [
+    { page: "home", title: "Предприятия", text: "Каталог предприятий и поиск практики", icon: "search" },
+    { page: "status", title: "Мои заявки", text: "Статус и история заявок", icon: "file" },
+    { page: "documents", title: "Документы", text: "Направления и договоры", icon: "shield" },
+    { page: "profile", title: "Профиль", text: "Личные данные и уведомления", icon: "settings" },
+    { page: "faq", title: "Помощь и FAQ", text: "Ответы на частые вопросы", icon: "help" },
+    { page: "login", title: "Вход", text: "Авторизация и выбор роли", icon: "logout" },
+  ];
+  return (
+    <main className="container page narrow fade">
+      <Breadcrumbs items={["Карта сайта"]} navigate={navigate} />
+      <div className="page-heading">
+        <h1>Карта сайта</h1>
+        <p>Все разделы сервиса в одном месте.</p>
+      </div>
+      <div className="sitemap-grid">
+        {links.map((link) => (
+          <button
+            className="panel sitemap-card"
+            key={link.page}
+            onClick={() => navigate(link.page)}
+          >
+            <span>
+              <Icon name={link.icon} />
+            </span>
+            <div>
+              <b>{link.title}</b>
+              <small>{link.text}</small>
+            </div>
+            <Icon name="arrow" size={18} />
+          </button>
+        ))}
+      </div>
+    </main>
+  );
+}
+
 function NotFound({ navigate }: { navigate: (p: Page) => void }) {
   return (
     <main className="not-found fade">
@@ -1647,7 +2121,11 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([]),
     [verify, setVerify] = useState(false),
     [preview, setPreview] = useState<string | null>(null),
-    [confirm, setConfirm] = useState<{ text: string; action: () => void } | null>(null);
+    [confirm, setConfirm] = useState<{ text: string; action: () => void } | null>(null),
+    [apps, setApps] = useState(initialApplications);
+  const updateApplicationStatus = (id: number, status: string) => {
+    setApps((items) => items.map((a) => (a.id === id ? { ...a, status } : a)));
+  };
   const toast = (kind: "success" | "error", text: string) => {
     const id = Date.now();
     setToasts((x) => [...x, { id, kind, text }]);
@@ -1668,6 +2146,17 @@ export default function App() {
     window.addEventListener("scroll", f);
     return () => window.removeEventListener("scroll", f);
   }, []);
+  useEffect(() => {
+    if (!verify && !preview && !confirm) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setVerify(false);
+      setPreview(null);
+      setConfirm(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [verify, preview, confirm]);
   const login = (r: Role) => {
     setRole(r);
     setPage("home");
@@ -1694,6 +2183,8 @@ export default function App() {
         verify={() => setVerify(true)}
         preview={(name) => setPreview(name)}
         confirm={(text, action) => setConfirm({ text, action })}
+        apps={apps}
+        onStatusChange={updateApplicationStatus}
       />
     );
   else if (page === "home") content = <StudentHome navigate={navigate} toast={toast} />;
@@ -1702,10 +2193,12 @@ export default function App() {
   else if (page === "apply")
     content = <ApplyForm companyId={companyId} navigate={navigate} toast={toast} />;
   else if (page === "status") content = <StatusDashboard navigate={navigate} />;
-  else if (page === "documents") content = <Documents navigate={navigate} toast={toast} />;
+  else if (page === "documents")
+    content = <Documents navigate={navigate} toast={toast} preview={(name) => setPreview(name)} />;
   else if (page === "profile")
     content = <Profile navigate={navigate} toast={toast} logout={logout} />;
   else if (page === "faq") content = <FAQ navigate={navigate} />;
+  else if (page === "sitemap") content = <Sitemap navigate={navigate} />;
   else content = <NotFound navigate={navigate} />;
   return (
     <div className="app">
@@ -1725,7 +2218,7 @@ export default function App() {
         <div className="container">
           <span>© 2025 Практика.ПРО</span>
           <button onClick={() => navigate("faq")}>Помощь</button>
-          <button onClick={() => navigate("404")}>Карта сайта</button>
+          <button onClick={() => navigate("sitemap")}>Карта сайта</button>
         </div>
       </footer>
       {showUp && (
