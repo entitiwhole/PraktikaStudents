@@ -177,5 +177,9 @@ export function userInitials(name: string): string {
 }
 
 export function roleLabel(role: Role): string {
-  return role === "student" ? "Студент" : role === "college" ? "Техникум" : "Предприятие";
+  return role === "student"
+    ? "Студент"
+    : role === "college"
+      ? "Образовательная организация"
+      : "Предприятие";
 }
