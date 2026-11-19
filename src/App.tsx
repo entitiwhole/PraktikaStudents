@@ -21,6 +21,101 @@ import {
   type User,
 } from "./auth";
 
+function TitleScreen({ onEnter }: { onEnter: () => void }) {
+  const params = new URLSearchParams(window.location.search);
+  // Кнопка входа видна только вам: откройте сайт с ?secret=hramkov
+  const isAuthor = params.get("secret") === "hramkov";
+
+  return (
+    <div
+      className="app"
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        background: "var(--bg)",
+        padding: 24,
+      }}
+    >
+      <div
+        className="panel"
+        style={{
+          maxWidth: 640,
+          width: "100%",
+          padding: 48,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 16,
+            background: "var(--blue)",
+            color: "#fff",
+            display: "grid",
+            placeItems: "center",
+            margin: "0 auto 24px",
+            fontSize: 30,
+            fontWeight: 800,
+          }}
+        >
+          П
+        </div>
+
+        <span className="eyebrow">Выпускная практическая работа</span>
+        <h1 style={{ fontSize: 34, marginBottom: 16, letterSpacing: "-1px" }}>
+          Практика.ПРО
+        </h1>
+        <p
+          style={{
+            color: "var(--muted)",
+            fontSize: 15,
+            lineHeight: 1.6,
+            marginBottom: 32,
+          }}
+        >
+          Веб-сервис поиска производственной практики для студентов СПО
+        </p>
+
+        <div
+          style={{
+            borderTop: "1px solid var(--border)",
+            paddingTop: 24,
+            display: "grid",
+            gap: 10,
+            fontSize: 14,
+            textAlign: "left",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ color: "var(--muted)" }}>Автор</span>
+            <b>Храмков Максим Сергеевич</b>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ color: "var(--muted)" }}>Возраст</span>
+            <b>19 лет</b>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ color: "var(--muted)" }}>Учебное заведение</span>
+            <b>БПК</b>
+          </div>
+        </div>
+
+        {isAuthor && (
+          <button
+            className="btn btn-primary"
+            style={{ marginTop: 32, width: "100%", height: 46 }}
+            onClick={onEnter}
+          >
+            Перейти к сервису
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 type Page =
   | "home"
   | "company"
@@ -2580,6 +2675,7 @@ function NotFound({ navigate }: { navigate: (p: Page) => void }) {
 }
 
 export default function App() {
+  const [titleDone, setTitleDone] = useState(false);
   const [accounts, setAccounts] = useState<User[]>(() => loadUsers());
   const [user, setUser] = useState<User | null>(() => {
     const session = loadSession();
@@ -2661,6 +2757,9 @@ export default function App() {
     setMenu(false);
     setToasts([]);
   };
+    if (!titleDone) {
+    return <TitleScreen onEnter={() => setTitleDone(true)} />;
+  }
   if (!user)
     return (
       <>
