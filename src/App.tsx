@@ -2673,7 +2673,9 @@ function NotFound({ navigate }: { navigate: (p: Page) => void }) {
 }
 
 export default function App() {
-  const [titleDone, setTitleDone] = useState(false);
+  const [titleDone, setTitleDone] = useState(
+    () => new URLSearchParams(window.location.search).get("secret") !== "hramkov",
+  );
   const [accounts, setAccounts] = useState<User[]>(() => loadUsers());
   const [user, setUser] = useState<User | null>(() => {
     const session = loadSession();
@@ -2755,8 +2757,14 @@ export default function App() {
     setMenu(false);
     setToasts([]);
   };
-    if (!titleDone) {
-    return <TitleScreen onEnter={() => setTitleDone(true)} />;
+  const enterService = () => {
+    setTitleDone(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("secret");
+    window.history.replaceState({}, "", `${url.pathname}${url.hash}`);
+  };
+  if (!titleDone) {
+    return <TitleScreen onEnter={enterService} />;
   }
   if (!user)
     return (
