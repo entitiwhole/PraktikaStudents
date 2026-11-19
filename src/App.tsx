@@ -63,7 +63,7 @@ function TitleScreen({ onEnter }: { onEnter: () => void }) {
           П
         </div>
 
-        <span className="eyebrow">Выпускная практическая работа</span>
+        <span className="eyebrow">Конкурсная работа</span>
         <h1 style={{ fontSize: 34, marginBottom: 16, letterSpacing: "-1px" }}>
           Практика.ПРО
         </h1>
