@@ -23,9 +23,7 @@ import {
 
 function TitleScreen({ onEnter }: { onEnter: () => void }) {
   const params = new URLSearchParams(window.location.search);
-  // Кнопка входа видна только вам: откройте сайт с ?secret=hramkov
   const isAuthor = params.get("secret") === "hramkov";
-
   return (
     <div
       className="app"
@@ -98,7 +96,7 @@ function TitleScreen({ onEnter }: { onEnter: () => void }) {
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ color: "var(--muted)" }}>Учебное заведение</span>
-            <b>БПК</b>
+            <b>Беловский педагогический колледж</b>
           </div>
         </div>
 
